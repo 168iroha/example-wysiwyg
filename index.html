@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ja">
+	<head>
+		<meta charset="utf-8">
+		<title>Wysiwyg</title>
+		<script type="text/javascript" src="editor.js"></script>
+	</head>
+	<body>
+		<div id="editor" contenteditable="true"></div>	
+	</body>
+
+	<script>
+		const editor = document.getElementById('editor');
+		const undoBuffer = new UndoBuffer(editor, new Nomalizer());
+
+		// キー入力の定義
+		const keyInput = /** @type { const } */ ({
+			// Ctrl+なキー
+			ctrl : {
+				// undo
+				z : () => undoBuffer.undo(),
+				// redo
+				y : () => undoBuffer.redo()
+			},
+			// Shift+なキー
+			shift : {
+				Enter: () => shiftEnter(editor)
+			},
+			// Alt+なキー
+			alt : {},
+
+			// 以降その他キー
+			Enter: () => enter(editor)
+		});
+
+		// 自前で行うキーの実装
+		document.addEventListener('keydown', e => {
+			let callback = null;
+			if (e.ctrlKey && (e.key in keyInput.ctrl)) {
+				// Ctrl+なキー
+				callback = keyInput.ctrl[e.key];
+			}
+			else if (e.shiftKey && (e.key in keyInput.shift)) {
+				// Shift+なキー
+				callback = keyInput.shift[e.key];
+			}
+			else if (e.altKey && (e.key in keyInput.alt)) {
+				// Alt+なキー
+				callback = keyInput.alt[e.key];
+			}
+			else if (e.key in keyInput) {
+				// その他キー
+				callback = keyInput[e.key];
+			}
+			if (callback) {
+				e.preventDefault();
+				// undoバッファの管理するキャレット位置の更新のために自前で'beforeinput'を発火
+				editor.dispatchEvent(new Event('beforeinput'));
+				callback();
+			}
+		});
+	</script>
+</html>
